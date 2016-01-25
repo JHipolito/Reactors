@@ -1,0 +1,68 @@
+''' First of all I have to be thankful to my colleagues, 
+they have provided useful knowledge to the community and it's 
+easy to learn python in chemical engineering field.
+
+That's a very easy example of a batch reactor that had been previously done in 
+matlab and just learning the basis I think it's a good point to start from.
+and if someone wants to start with reactors it's educational too'''
+# This is the library to be used
+# Numpy because we need math functions
+# Plotlib to see the results and obtain a conclusion
+
+%matplotlib inline
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import odeint
+
+plt.style.use('bmh')
+
+# A + B -> 2C + D and we also gave inerts (5 column)
+
+no=np.array( (4,4,0,0,4.5)) # Initial feed (moles)
+aj=np.array( (-1,-1,2,1,0)) 
+P=1 # Pressure (atm)
+cpj=np.array((10,15,15,12,20)) # Specific heat capacity (J/(mol*K))
+Tref=293.15 # Reference for thermodynamics (K)
+href=-12500*aj[2]  # (J/mol(rxn))Remember that the first element is zero that's important to remark if you started from matlab
+R=0.082 #(atm*L/(mol*K))
+ea=-no[0]*sum(aj)/sum(no)/aj[0] # Expansion factor
+Xaf=0.9 # Final conversion to analyze
+Tent=473.15 # K
+
+'''
+Let's solve two differential equations, mass and energy balance 
+are at return. It's important to note that independent variable it's not passed as
+first argument like matlab requires
+
+'''
+
+def dydXa(y,Xa):
+    
+    t=y[0]
+    T=y[1]
+    k=np.exp(8.2-1000/T)
+    h=href+(T-Tref)*(sum(aj*cpj)) # T(K) and k(L/(mol*h))
+    dtdXa=sum(no)*R*T*(1+Xa*ea)/k/no[0]/(1-Xa)**2/P # Mass balance
+    dTdXa=no[0]/aj[0]*h/(sum(no*cpj)-Xa*no[0]/aj[0]*sum(aj*cpj)) # Energy Balance
+    return [dtdXa,dTdXa]
+z  = np.linspace(0., Xaf, 1000) # A vector with n=1000 points for Conversion
+y0 = [0,Tent] # Initial conditions
+
+Sol = odeint(dydXa, y0, z)
+
+# Renaming output vectors
+
+tsol=Sol[:,0] 
+Tsol=Sol[:,1]
+
+fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1,figsize=(4,8)) # Dispositon of plots
+
+
+ax1.plot(z, tsol)
+ax1.set_ylabel("$Time$ (hours)")
+
+
+
+ax2.plot(z, Tsol)
+ax2.set_ylabel("$Temperature$ (K)")
